@@ -2,8 +2,21 @@ package ua.khpi.yesipov.task02;
 
 import java.util.Iterator;
 
+/**
+ * The Demo class shows the all necessary methods for operating the list
+ * that has type MyListImpl.
+ *
+ * @version     1.0 06 November 2017
+ * @author      Vadym Yesipov
+ */
 public class Demo {
-	
+
+    /**
+     * Shows the work of the all methods that is realized in MyListImpl class
+     * and the package interfaces.
+     *
+     * @param args inner parameters that was deployed with the program.
+     */
 	public static void main(String[] args) {
 		System.out.println("==== Part1");
 		MyList list = new MyListImpl();

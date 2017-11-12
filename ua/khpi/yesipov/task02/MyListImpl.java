@@ -18,11 +18,6 @@ public class MyListImpl implements MyList, ListIterable {
      */
     private Node last;
     private Node first;
-    /**
-     * The previousNode field means the previous position of the list
-     * and is used as auxiliary element for add method.
-     */
-    private Node previousNode;
 
     /**
      * Means the size of the list, except last and first
@@ -64,53 +59,50 @@ public class MyListImpl implements MyList, ListIterable {
         public Node() {
             previous = null;
             next = null;
+            value = null;
         }
 
         /**
-         * Initializes fields for nodes that have a value.
-         * Is used for the method add in outer class.
-         * The next field is initialized with the last field of outer class.
+         * Initializes fields for nodes that have a value. Is used for
+         * the method add in the outer class. The previous field is
+         * initialized with the previous node of the last node, the next field
+         * is initialized with the last field of the outer class,
+         * the previous of the last one and the next of the previous one are
+         * initialized with the current one.
          *
-         * @param previous initializes the field with the previous node
-         *                 of outer class.
+         * @param value initializes the field of the current node.
          */
-        public Node(Node previous) {
-            this.previous = previous;
+        public Node(Object value) {
+            this.value = value;
+            previous = last.previous;
             next = last;
+            last.previous = this;
+            previous.next = this;
         }
     }
 
     /**
      * Creates the list with the size, the first and the last nodes.
+     * The last and the first nodes tie via links between themselves.
      * The nodes mustn't include any value and should be used for the iterator
      * and several methods besides this constructor.
      */
     public MyListImpl() {
         first = new Node();
         last = new Node();
+        first.next = last;
+        last.previous = first;
         size = 0;
     }
 
     /**
      * Creates the new node. Initializes its value by parameter e.
-     * Also initializes its nodes to link it with the previous
-     * and the next nodes. If list's size == 0 then
-     * the previous node of current node is the first node of the list.
-     * After that the previous node is initialized by current node
-     * and the size increases itself.
      *
      * @param e initializes the value of the current node.
      */
     @Override
     public void add(Object e) {
-        if (size == 0) {
-            previousNode = first;
-        }
-        Node node = new Node(previousNode);
-        node.value = e;
-        node.previous.next = node;
-        node.next.previous = node;
-        previousNode = node;
+        new Node(e);
         size++;
     }
 
@@ -156,7 +148,7 @@ public class MyListImpl implements MyList, ListIterable {
      * in the specific position in the created array of objects.
      *
      * @return <code>null</code> if the size == 0, otherwise it returns
-     *         the array of objects.
+     * the array of objects.
      */
     @Override
     public Object[] toArray() {
@@ -189,7 +181,7 @@ public class MyListImpl implements MyList, ListIterable {
      * <code>true</code> will be returned).
      *
      * @param o the value that should be found in the list.
-     * @return  <code>true</code> if the parameter exists in the list.
+     * @return <code>true</code> if the parameter exists in the list.
      */
     @Override
     public boolean contains(Object o) {
@@ -212,7 +204,7 @@ public class MyListImpl implements MyList, ListIterable {
      * @param c represents the list of parent's type MyList
      *          and is used for giving its values to contains method
      *          to find out value's existence.
-     * @return  <code>true</code> if the list includes the parameter
+     * @return <code>true</code> if the list includes the parameter
      */
     @Override
     public boolean containsAll(MyList c) {
@@ -277,6 +269,11 @@ public class MyListImpl implements MyList, ListIterable {
         private boolean flag = false;
 
         /**
+         * This is the auxiliary field for the extending inner class.
+         */
+        private int i;
+
+        /**
          * If the next node exists and it's not the last field,
          * that doesn't have a value, then the method returns true.
          * Otherwise the pointer is placed on the last node(that has a value),
@@ -287,19 +284,19 @@ public class MyListImpl implements MyList, ListIterable {
          * @return true if the iteration has more elements
          */
         public boolean hasNext() {
-            if (switcher.next != null && switcher.next != last) {
+            if (switcher.next != last) {
                 return true;
-            } else {
-                switcher = last;
-                return false;
             }
+            switcher = last;
+            return false;
         }
 
         /**
          * Changes the flag if the next node isn't the last node(without value)
-         * or null and shifts the switcher on the next position in the list.
-         * Then returns the value of the recent placed node, otherwise null
-         * if the condition in the very beginning didn't come true.
+         * or null, shifts the switcher on the next position in the list and
+         * initializes the field i with 0. Then returns the value of
+         * the recent placed node, otherwise null if the condition in
+         * the very beginning didn't come true.
          *
          * @return the next element in the iteration
          */
@@ -307,6 +304,7 @@ public class MyListImpl implements MyList, ListIterable {
             if (hasNext()) {
                 flag = true;
                 switcher = switcher.next;
+                i = 0;
                 return switcher.value;
             }
             return null;
@@ -322,25 +320,22 @@ public class MyListImpl implements MyList, ListIterable {
          *                               repeated method call.
          */
         public void remove() {
-            if (flag) {
-                if (switcher.next == null) {
-                    Node previous = switcher.previous;
-                    previous.next = null;
-                    switcher = previous;
-                } else {
-                    Node next = switcher.next;
-                    Node previous = switcher.previous;
-                    next.previous = previous;
-                    previous.next = next;
-                    switcher = previous;
-                }
-                //switcher.getNext().setPrevious(switcher.getPrevious());
-                //switcher.getPrevious().setNext(switcher.getNext());
-                size--;
-            } else {
+            if (!flag) {
                 throw new IllegalStateException();
             }
+            if (switcher.next == null) {
+                Node previous = switcher.previous;
+                previous.next = null;
+                switcher = previous;
+            } else {
+                Node next = switcher.next;
+                Node previous = switcher.previous;
+                next.previous = previous;
+                previous.next = next;
+                switcher = previous;
+            }
             flag = false;
+            size--;
         }
     }
 
@@ -369,21 +364,19 @@ public class MyListImpl implements MyList, ListIterable {
          */
         @Override
         public boolean hasPrevious() {
-            if (switcher.previous != null
-                    && switcher.previous != first) {
+            if (switcher.previous != first) {
                 return true;
-            } else {
-                switcher = first;
-                return false;
             }
+            switcher = first;
+            return false;
         }
 
         /**
          * Changes the flag if the previous node isn't the first node(without
-         * value) or null and shifts the switcher on the previous position in
-         * the list. Then returns the value of the recent placed node,
-         * otherwise null if the condition in the very beginning didn't come
-         * true.
+         * value) or null, shifts the switcher on the previous position in
+         * the list and initializes the field i from the parent's class with 1.
+         * Then returns the value of the recent placed node, otherwise null
+         * if the condition in the very beginning didn't come true.
          *
          * @return returns the previous element in the list and
          * moves the cursor position backwards.
@@ -393,6 +386,7 @@ public class MyListImpl implements MyList, ListIterable {
             if (hasPrevious()) {
                 super.flag = true;
                 switcher = switcher.previous;
+                super.i = 1;
                 return switcher.value;
             }
             return null;
@@ -416,7 +410,9 @@ public class MyListImpl implements MyList, ListIterable {
          * Removes from the underlying collection the last element
          * returned by this iterator and reinitialize the links between
          * the previous and the next nodes, if the flag is true.
-         * Otherwise it throws exception.
+         * Otherwise it throws exception. If before removing the iterator
+         * had moved forwards, switcher would have remained. Otherwise it would
+         * have been initialized by the next node of the list.
          *
          * @throws IllegalStateException If the flag is true, but that means
          *                               repeated method call.
@@ -424,6 +420,7 @@ public class MyListImpl implements MyList, ListIterable {
         @Override
         public void remove() {
             super.remove();
+            switcher = super.i == 0 ? switcher : switcher.next;
         }
     }
 }
